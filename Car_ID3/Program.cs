@@ -21,7 +21,7 @@ namespace Car_ID3
 			JObject jsonRoot = ConvertNode(treeRoot, true);
 			var serializer = new JsonSerializer();
 			serializer.Formatting = Formatting.Indented;
-			using (var stream = File.OpenWrite("tree.json"))
+			using (var stream = File.Open("tree.json", FileMode.Create, FileAccess.Write))
 			using (var writer = new StreamWriter(stream))
 			{
 				serializer.Serialize(writer, jsonRoot);
