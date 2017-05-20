@@ -19,7 +19,7 @@ namespace Car_ID3
 			var trainer = new ID3Training<byte>(metadata.attributes, metadata.classValues, instances);
 			var classificator = trainer.Train();
 			Console.WriteLine("Generated tree");
-			OutputTree(metadata, instances, trainer.GetRootNode(classificator), false);
+			OutputTree(metadata, instances, trainer.GetRootNode(classificator), true);
 			var test = instances.Select(i => (i, classificator.Classify(i)));
 			int totalCorrect = 0;
 			for (int c = 0; c < metadata.classValues.Length; c++)
@@ -53,6 +53,7 @@ namespace Car_ID3
 				if (includeInstanceDistribution)
 				{
 					o.Add("instances", new JArray(node.GetClasses(instances).Select(g => new JArray(new JValue(g.Count()), new JValue(metadata.classValues[C(g.Key)])))));
+					o.Add("entropy", new JValue(node.Entropy));
 				}
 				if (node.TrainAttribute.HasValue)
 				{
