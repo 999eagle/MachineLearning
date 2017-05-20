@@ -16,9 +16,10 @@ namespace Car_ID3
 			var metadata = ReadMetaData("car_data\\car.c45-names");
 			var instances = ReadInstances(metadata, "car_data\\car.data");
 			Console.WriteLine("Read input");
-			var treeRoot = ID3Training(metadata, instances);
+			var trainer = new ID3Training(metadata.attributes, metadata.classValues, instances);
+			var treeRoot = trainer.Train();
 			Console.WriteLine("Generated tree");
-			JObject jsonRoot = ConvertNode(treeRoot, true);
+			JObject jsonRoot = ConvertNode(treeRoot, false);
 			var serializer = new JsonSerializer();
 			serializer.Formatting = Formatting.Indented;
 			using (var stream = File.Open("tree.json", FileMode.Create, FileAccess.Write))
@@ -28,7 +29,7 @@ namespace Car_ID3
 			}
 			Console.ReadLine();
 
-			JObject ConvertNode(Node node, bool includeInstanceDistribution)
+			JObject ConvertNode(ID3Training.Node node, bool includeInstanceDistribution)
 			{
 				var o = new JObject();
 				if (includeInstanceDistribution)
@@ -95,67 +96,6 @@ namespace Car_ID3
 				}
 				return instances.ToArray();
 			}
-		}
-
-		static Node ID3Training((string[] classValues, TrainAttribute[] attributes) metadata, int[][] instances)
-		{
-			var rootNode = new Node { InstanceIds = Enumerable.Range(0, instances.Length).Select(i => (ushort)i).ToArray() };
-			rootNode.CalcEntropy(metadata.classValues.Length, instances);
-			var openList = new List<Node> { rootNode };
-			while (openList.Any())
-			{
-				var node = openList.First();
-				openList.Remove(node);
-
-				var possibleAttributes = Enumerable.Range(0, metadata.attributes.Length).Select(i => (sbyte)i).ToList();
-				var parent = node.Parent;
-				while (parent != null)
-				{
-					possibleAttributes.Remove(parent.TrainAttribute);
-					parent = parent.Parent;
-				}
-				var classes = node.GetClasses(instances);
-				if (classes.Count() == 1 || possibleAttributes.Count == 0)
-				{
-					// all instances in this node have the same class
-					node.Class = classes.OrderByDescending(g => g.Count()).First().Key;
-				}
-				else
-				{
-					// multiple classes in this node
-					// find attribute with the highest information gain
-					double maxGain = double.MinValue;
-					sbyte bestAttribute = 0;
-					IEnumerable<(sbyte, Node)> bestChildren = null;
-					foreach (var attr in possibleAttributes)
-					{
-						// generate child nodes for the current attribute
-						var children = Enumerable.Range(0, metadata.attributes[attr].PossibleValues.Length).Select(v =>
-						{
-							var child = new Node
-							{
-								Parent = node,
-								InstanceIds = node.InstanceIds.Where(i => instances[i][attr] == v).ToArray()
-							};
-							child.CalcEntropy(metadata.classValues.Length, instances);
-							return ((sbyte)v, child);
-						});
-						// calculate gain
-						var gain = children.Aggregate(node.Entropy, (g, c) => g - c.Item2.Entropy * c.Item2.InstanceIds.Length / node.InstanceIds.Length);
-						if (gain > maxGain)
-						{
-							bestAttribute = attr;
-							bestChildren = children;
-							maxGain = gain;
-						}
-					}
-					// set node to use the best attribute and the corresponding children
-					node.TrainAttribute = bestAttribute;
-					node.Children = bestChildren.ToArray();
-					openList.AddRange(node.Children.Select(c => c.node));
-				}
-			}
-			return rootNode;
 		}
 	}
 }
