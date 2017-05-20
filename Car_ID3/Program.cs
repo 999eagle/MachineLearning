@@ -103,7 +103,15 @@ namespace Car_ID3
 			{
 				var node = openList.First();
 				openList.Remove(node);
-				if (node.Entropy == 0)
+
+				var possibleAttributes = Enumerable.Range(0, metadata.attributes.Length).Select(i => (sbyte)i).ToList();
+				var parent = node.Parent;
+				while (parent != null)
+				{
+					possibleAttributes.Remove(parent.TrainAttribute);
+					parent = parent.Parent;
+				}
+				if (node.Entropy == 0 || possibleAttributes.Count == 0)
 				{
 					// all instances in this node have the same class
 					node.Class = node.GetClasses(instances).OrderByDescending(g => g.Count()).First().Key;
@@ -111,46 +119,36 @@ namespace Car_ID3
 				else
 				{
 					// multiple classes in this node
-					var possibleAttributes = Enumerable.Range(0, metadata.attributes.Length).Select(i => (sbyte)i).ToList();
-					var parent = node.Parent;
-					while (parent != null)
+					// find attribute with the highest information gain
+					double maxGain = double.MinValue;
+					sbyte bestAttribute = 0;
+					IEnumerable<(sbyte, Node)> bestChildren = null;
+					foreach (var attr in possibleAttributes)
 					{
-						possibleAttributes.Remove(parent.TrainAttribute);
-						parent = parent.Parent;
-					}
-					if (possibleAttributes.Count > 0)
-					{
-						// find attribute with the highest information gain
-						double maxGain = double.MinValue;
-						sbyte bestAttribute = 0;
-						IEnumerable<(sbyte, Node)> bestChildren = null;
-						foreach (var attr in possibleAttributes)
+						// generate child nodes for the current attribute
+						var children = Enumerable.Range(0, metadata.attributes[attr].PossibleValues.Length).Select(v =>
 						{
-							// generate child nodes for the current attribute
-							var children = Enumerable.Range(0, metadata.attributes[attr].PossibleValues.Length).Select(v =>
+							var child = new Node
 							{
-								var child = new Node
-								{
-									Parent = node,
-									InstanceIds = node.InstanceIds.Where(i => instances[i][attr] == v).ToArray()
-								};
-								child.CalcEntropy(metadata.classValues.Length, instances);
-								return ((sbyte)v, child);
-							});
-							// calculate gain
-							var gain = children.Aggregate(node.Entropy, (g, c) => g - c.Item2.Entropy * c.Item2.InstanceIds.Length / node.InstanceIds.Length);
-							if (gain > maxGain)
-							{
-								bestAttribute = attr;
-								bestChildren = children;
-								maxGain = gain;
-							}
+								Parent = node,
+								InstanceIds = node.InstanceIds.Where(i => instances[i][attr] == v).ToArray()
+							};
+							child.CalcEntropy(metadata.classValues.Length, instances);
+							return ((sbyte)v, child);
+						});
+						// calculate gain
+						var gain = children.Aggregate(node.Entropy, (g, c) => g - c.Item2.Entropy * c.Item2.InstanceIds.Length / node.InstanceIds.Length);
+						if (gain > maxGain)
+						{
+							bestAttribute = attr;
+							bestChildren = children;
+							maxGain = gain;
 						}
-						// set node to use the best attribute and the corresponding children
-						node.TrainAttribute = bestAttribute;
-						node.Children = bestChildren.ToArray();
-						openList.AddRange(node.Children.Select(c => c.node));
 					}
+					// set node to use the best attribute and the corresponding children
+					node.TrainAttribute = bestAttribute;
+					node.Children = bestChildren.ToArray();
+					openList.AddRange(node.Children.Select(c => c.node));
 				}
 			}
 			return rootNode;
