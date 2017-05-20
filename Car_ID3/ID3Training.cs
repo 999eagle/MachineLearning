@@ -41,7 +41,27 @@ namespace Car_ID3
 			public override string ToString() => $"{{attribute: {TrainAttribute}, numInstances: {InstanceIds.Length}, depth: {Depth}, entropy: {Entropy}}}";
 		}
 
-		public Node Train()
+		class Classificator : IClassificator<TValueIndex>
+		{
+			public Node RootNode { get; }
+			public Classificator(Node rootNode)
+			{
+				RootNode = rootNode;
+			}
+
+			public TValueIndex Classify(TValueIndex[] instance)
+			{
+				var currentNode = RootNode;
+				while (!currentNode.Class.HasValue)
+				{
+					var value = instance[currentNode.TrainAttribute.Value];
+					currentNode = currentNode.Children.FirstOrDefault(c => c.attributeValue.Equals(value)).node;
+				}
+				return currentNode.Class.Value;
+			}
+		}
+
+		public IClassificator<TValueIndex> Train()
 		{
 			var rootNode = new Node { InstanceIds = Enumerable.Range(0, instances.Length).Select(i => (ushort)i).ToArray() };
 			rootNode.CalcEntropy(classValues.Length, instances);
@@ -100,7 +120,13 @@ namespace Car_ID3
 					openList.AddRange(node.Children.Select(c => c.node));
 				}
 			}
-			return rootNode;
+			return new Classificator(rootNode);
+		}
+
+		public Node GetRootNode(IClassificator<TValueIndex> classificator)
+		{
+			if (!(classificator is Classificator cls)) { return null; }
+			return cls.RootNode;
 		}
 	}
 }

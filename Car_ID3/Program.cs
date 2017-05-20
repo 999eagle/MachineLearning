@@ -17,9 +17,16 @@ namespace Car_ID3
 			var instances = ReadInstances(metadata, "car_data\\car.data");
 			Console.WriteLine("Read input");
 			var trainer = new ID3Training<byte>(metadata.attributes, metadata.classValues, instances);
-			var treeRoot = trainer.Train();
+			var classificator = trainer.Train();
 			Console.WriteLine("Generated tree");
-			JObject jsonRoot = ConvertNode(treeRoot, false);
+			OutputTree(metadata, instances, trainer.GetRootNode(classificator), false);
+			Console.ReadLine();
+		}
+
+		static void OutputTree<T>((string[] classValues, TrainAttribute[] attributes) metadata, T[][] instances, ID3Training<T>.Node rootNode, bool includeInstanceDistribution) where T : struct, IEquatable<T>
+		{
+			var C = ValueHelper<T>.ConvertBack;
+			JObject jsonRoot = ConvertNode(rootNode);
 			var serializer = new JsonSerializer();
 			serializer.Formatting = Formatting.Indented;
 			using (var stream = File.Open("tree.json", FileMode.Create, FileAccess.Write))
@@ -27,24 +34,23 @@ namespace Car_ID3
 			{
 				serializer.Serialize(writer, jsonRoot);
 			}
-			Console.ReadLine();
 
-			JObject ConvertNode(ID3Training<byte>.Node node, bool includeInstanceDistribution)
+			JObject ConvertNode(ID3Training<T>.Node node)
 			{
 				var o = new JObject();
 				if (includeInstanceDistribution)
 				{
-					o.Add("instances", new JArray(node.GetClasses(instances).Select(g => new JArray(new JValue(g.Count()), new JValue(metadata.classValues[g.Key])))));
+					o.Add("instances", new JArray(node.GetClasses(instances).Select(g => new JArray(new JValue(g.Count()), new JValue(metadata.classValues[C(g.Key)])))));
 				}
 				if (node.TrainAttribute.HasValue)
 				{
 					var attr = metadata.attributes[node.TrainAttribute.Value];
 					o.Add("attribute", new JValue(attr.Name));
-					o.Add("children", new JArray(node.Children.Select(c => new JObject { { "attributeValue", attr.PossibleValues[c.attributeValue] }, { "node", ConvertNode(c.node, includeInstanceDistribution) } })));
+					o.Add("children", new JArray(node.Children.Select(c => new JObject { { "attributeValue", attr.PossibleValues[C(c.attributeValue)] }, { "node", ConvertNode(c.node) } })));
 				}
 				else if (node.Class.HasValue)
 				{
-					o.Add("class", new JValue(metadata.classValues[node.Class.Value]));
+					o.Add("class", new JValue(metadata.classValues[C(node.Class.Value)]));
 				}
 				return o;
 			}

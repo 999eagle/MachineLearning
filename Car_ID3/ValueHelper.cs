@@ -9,13 +9,14 @@ namespace Car_ID3
 {
 	class ValueHelper<T> where T : struct
 	{
-		public static readonly Func<int, T> Convert = GenerateConverter();
+		public static readonly Func<int, T> Convert = GenerateConverter<int, T>();
+		public static readonly Func<T, int> ConvertBack = GenerateConverter<T, int>();
 
-		static Func<int, T> GenerateConverter()
+		static Func<Tin, Tout> GenerateConverter<Tin, Tout>()
 		{
-			var parameter = Expression.Parameter(typeof(int));
-			var method = Expression.Lambda<Func<int, T>>(
-				Expression.ConvertChecked(parameter, typeof(T)),
+			var parameter = Expression.Parameter(typeof(Tin));
+			var method = Expression.Lambda<Func<Tin, Tout>>(
+				Expression.ConvertChecked(parameter, typeof(Tout)),
 				parameter);
 			return method.Compile();
 		}
