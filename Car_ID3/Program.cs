@@ -80,7 +80,7 @@ namespace Car_ID3
 				if (node.Entropy == 0)
 				{
 					// all instances in this node have the same class
-					node.Class = (sbyte)Enumerable.Range(0, metadata.classValues.Length).Where(i => classCount[i] > 0).First();
+					node.Class = node.GetClasses(instances).OrderByDescending(g => g.Count()).First().Key;
 				}
 				else
 				{
@@ -123,7 +123,7 @@ namespace Car_ID3
 						// set node to use the best attribute and the corresponding children
 						node.TrainAttribute = bestAttribute;
 						node.Children = bestChildren.ToArray();
-						openList.AddRange(bestChildren.Select(c => c.Item2));
+						openList.AddRange(node.Children.Select(c => c.node));
 					}
 				}
 			}
