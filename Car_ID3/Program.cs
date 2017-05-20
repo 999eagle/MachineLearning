@@ -36,15 +36,15 @@ namespace Car_ID3
 				{
 					o.Add("instances", new JArray(node.GetClasses(instances).Select(g => new JArray(new JValue(g.Count()), new JValue(metadata.classValues[g.Key])))));
 				}
-				if (node.TrainAttribute != -1)
+				if (node.TrainAttribute.HasValue)
 				{
-					var attr = metadata.attributes[node.TrainAttribute];
+					var attr = metadata.attributes[node.TrainAttribute.Value];
 					o.Add("attribute", new JValue(attr.Name));
 					o.Add("children", new JArray(node.Children.Select(c => new JObject { { "attributeValue", attr.PossibleValues[c.attributeValue] }, { "node", ConvertNode(c.node, includeInstanceDistribution) } })));
 				}
-				else if (node.Class != -1)
+				else if (node.Class.HasValue)
 				{
-					o.Add("class", new JValue(metadata.classValues[node.Class]));
+					o.Add("class", new JValue(metadata.classValues[node.Class.Value]));
 				}
 				return o;
 			}
@@ -81,18 +81,18 @@ namespace Car_ID3
 			}
 		}
 
-		static int[][] ReadInstances((string[] classValues, TrainAttribute[] attributes) metadata, string filename)
+		static byte[][] ReadInstances((string[] classValues, TrainAttribute[] attributes) metadata, string filename)
 		{
 			var valueCount = metadata.attributes.Length + 1;
 			using (var file = File.OpenRead(filename))
 			using (var reader = new StreamReader(file))
 			{
-				var instances = new List<int[]>();
+				var instances = new List<byte[]>();
 				while (!reader.EndOfStream)
 				{
 					var values = reader.ReadLine().Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).ToArray();
 					if (values.Length != valueCount) continue;
-					instances.Add(Enumerable.Range(0, valueCount).Select(i => Array.IndexOf((i < valueCount - 1 ? metadata.attributes[i].PossibleValues : metadata.classValues), values[i])).ToArray());
+					instances.Add(Enumerable.Range(0, valueCount).Select(i => (byte)Array.IndexOf((i < valueCount - 1 ? metadata.attributes[i].PossibleValues : metadata.classValues), values[i])).ToArray());
 				}
 				return instances.ToArray();
 			}
