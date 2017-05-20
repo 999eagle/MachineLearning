@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Car_ID3
 {
@@ -16,7 +18,31 @@ namespace Car_ID3
 			Console.WriteLine("Read input");
 			var treeRoot = ID3Training(metadata, instances);
 			Console.WriteLine("Generated tree");
+			JObject jsonRoot = ConvertNode(treeRoot);
+			var serializer = new JsonSerializer();
+			serializer.Formatting = Formatting.Indented;
+			using (var stream = File.OpenWrite("tree.json"))
+			using (var writer = new StreamWriter(stream))
+			{
+				serializer.Serialize(writer, jsonRoot);
+			}
 			Console.ReadLine();
+
+			JObject ConvertNode(Node node)
+			{
+				var o = new JObject();
+				if (node.TrainAttribute != -1)
+				{
+					var attr = metadata.attributes[node.TrainAttribute];
+					o.Add("attribute", new JValue(attr.Name));
+					o.Add("children", new JArray(node.Children.Select(c => new JObject { { "attributeValue", attr.PossibleValues[c.attributeValue] }, { "node", ConvertNode(c.node) } })));
+				}
+				else if (node.Class != -1)
+				{
+					o.Add("class", new JValue(node.Class));
+				}
+				return o;
+			}
 		}
 
 		static (string[] classValues, TrainAttribute[] attributes) ReadMetaData(string filename)
