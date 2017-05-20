@@ -33,7 +33,7 @@ namespace Car_ID3
 			public IEnumerable<IGrouping<TValueIndex, ushort>> GetClasses(TValueIndex[][] allInstances) => InstanceIds.GroupBy(i => allInstances[i].Last());
 			public void CalcEntropy(int numClasses, TValueIndex[][] allInstances)
 			{
-				Entropy = GetClasses(allInstances).Select(g => g.Count() / (double)InstanceIds.Length).Aggregate((e, p) => e - (p == 0 ? 0 : p * Math.Log(p, numClasses)));
+				Entropy = GetClasses(allInstances).Select(g => g.Count() / (double)InstanceIds.Length).Aggregate(0.0, (e, p) => e - (p == 0 ? 0 : p * Math.Log(p, numClasses)));
 			}
 
 			public int Depth { get => Parent == null ? 0 : Parent.Depth + 1; }
