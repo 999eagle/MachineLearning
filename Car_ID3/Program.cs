@@ -16,7 +16,7 @@ namespace Car_ID3
 			var metadata = ReadMetaData("car_data\\car.c45-names");
 			var instances = ReadInstances(metadata, "car_data\\car.data");
 			Console.WriteLine("Read input");
-			var trainer = new ID3Training(metadata.attributes, metadata.classValues, instances);
+			var trainer = new ID3Training<byte>(metadata.attributes, metadata.classValues, instances);
 			var treeRoot = trainer.Train();
 			Console.WriteLine("Generated tree");
 			JObject jsonRoot = ConvertNode(treeRoot, false);
@@ -29,7 +29,7 @@ namespace Car_ID3
 			}
 			Console.ReadLine();
 
-			JObject ConvertNode(ID3Training.Node node, bool includeInstanceDistribution)
+			JObject ConvertNode(ID3Training<byte>.Node node, bool includeInstanceDistribution)
 			{
 				var o = new JObject();
 				if (includeInstanceDistribution)

@@ -6,13 +6,15 @@ using System.Threading.Tasks;
 
 namespace Car_ID3
 {
-	class ID3Training
+	class ID3Training<TValueIndex> where TValueIndex : struct, IEquatable<TValueIndex>
 	{
 		TrainAttribute[] attributes;
 		string[] classValues;
-		byte[][] instances;
+		TValueIndex[][] instances;
 
-		public ID3Training(TrainAttribute[] attributes, string[] classValues, byte[][] instances)
+		private Func<int, TValueIndex> CV = ValueHelper<TValueIndex>.Convert;
+
+		public ID3Training(TrainAttribute[] attributes, string[] classValues, TValueIndex[][] instances)
 		{
 			this.attributes = attributes;
 			this.classValues = classValues;
@@ -23,13 +25,13 @@ namespace Car_ID3
 		{
 			public byte? TrainAttribute { get; set; }
 			public ushort[] InstanceIds { get; set; }
-			public byte? Class { get; set; }
-			public (byte attributeValue, Node node)[] Children { get; set; }
+			public TValueIndex? Class { get; set; }
+			public (TValueIndex attributeValue, Node node)[] Children { get; set; }
 			public Node Parent { get; set; }
 
 			public double Entropy { get; private set; }
-			public IEnumerable<IGrouping<byte, ushort>> GetClasses(byte[][] allInstances) => InstanceIds.GroupBy(i => allInstances[i].Last());
-			public void CalcEntropy(int numClasses, byte[][] allInstances)
+			public IEnumerable<IGrouping<TValueIndex, ushort>> GetClasses(TValueIndex[][] allInstances) => InstanceIds.GroupBy(i => allInstances[i].Last());
+			public void CalcEntropy(int numClasses, TValueIndex[][] allInstances)
 			{
 				Entropy = GetClasses(allInstances).Select(g => g.Count() / (double)InstanceIds.Length).Aggregate((e, p) => e - (p == 0 ? 0 : p * Math.Log(p, numClasses)));
 			}
@@ -68,19 +70,20 @@ namespace Car_ID3
 					// find attribute with the highest information gain
 					double maxGain = double.MinValue;
 					byte bestAttribute = 0;
-					IEnumerable<(byte, Node)> bestChildren = null;
+					IEnumerable<(TValueIndex, Node)> bestChildren = null;
 					foreach (var attr in possibleAttributes)
 					{
 						// generate child nodes for the current attribute
 						var children = Enumerable.Range(0, attributes[attr].PossibleValues.Length).Select(v =>
 						{
+							var c = CV(v);
 							var child = new Node
 							{
 								Parent = node,
-								InstanceIds = node.InstanceIds.Where(i => instances[i][attr] == v).ToArray()
+								InstanceIds = node.InstanceIds.Where(i => instances[i][attr].Equals(c)).ToArray()
 							};
 							child.CalcEntropy(classValues.Length, instances);
-							return ((byte)v, child);
+							return (c, child);
 						});
 						// calculate gain
 						var gain = children.Aggregate(node.Entropy, (g, c) => g - c.Item2.Entropy * c.Item2.InstanceIds.Length / node.InstanceIds.Length);
