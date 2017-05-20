@@ -98,7 +98,6 @@ namespace Car_ID3
 			var rootNode = new Node { InstanceIds = Enumerable.Range(0, instances.Length).Select(i => (ushort)i).ToArray() };
 			rootNode.CalcEntropy(metadata.classValues.Length, instances);
 			var openList = new List<Node> { rootNode };
-			var classCount = new int[metadata.classValues.Length];
 			while (openList.Any())
 			{
 				var node = openList.First();
@@ -111,10 +110,11 @@ namespace Car_ID3
 					possibleAttributes.Remove(parent.TrainAttribute);
 					parent = parent.Parent;
 				}
-				if (node.Entropy == 0 || possibleAttributes.Count == 0)
+				var classes = node.GetClasses(instances);
+				if (classes.Count() == 1 || possibleAttributes.Count == 0)
 				{
 					// all instances in this node have the same class
-					node.Class = node.GetClasses(instances).OrderByDescending(g => g.Count()).First().Key;
+					node.Class = classes.OrderByDescending(g => g.Count()).First().Key;
 				}
 				else
 				{
