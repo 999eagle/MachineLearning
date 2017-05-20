@@ -18,7 +18,7 @@ namespace Car_ID3
 			Console.WriteLine("Read input");
 			var treeRoot = ID3Training(metadata, instances);
 			Console.WriteLine("Generated tree");
-			JObject jsonRoot = ConvertNode(treeRoot);
+			JObject jsonRoot = ConvertNode(treeRoot, true);
 			var serializer = new JsonSerializer();
 			serializer.Formatting = Formatting.Indented;
 			using (var stream = File.OpenWrite("tree.json"))
@@ -28,18 +28,22 @@ namespace Car_ID3
 			}
 			Console.ReadLine();
 
-			JObject ConvertNode(Node node)
+			JObject ConvertNode(Node node, bool includeInstanceDistribution)
 			{
 				var o = new JObject();
+				if (includeInstanceDistribution)
+				{
+					o.Add("instances", new JArray(node.GetClasses(instances).Select(g => new JArray(new JValue(g.Count()), new JValue(metadata.classValues[g.Key])))));
+				}
 				if (node.TrainAttribute != -1)
 				{
 					var attr = metadata.attributes[node.TrainAttribute];
 					o.Add("attribute", new JValue(attr.Name));
-					o.Add("children", new JArray(node.Children.Select(c => new JObject { { "attributeValue", attr.PossibleValues[c.attributeValue] }, { "node", ConvertNode(c.node) } })));
+					o.Add("children", new JArray(node.Children.Select(c => new JObject { { "attributeValue", attr.PossibleValues[c.attributeValue] }, { "node", ConvertNode(c.node, includeInstanceDistribution) } })));
 				}
 				else if (node.Class != -1)
 				{
-					o.Add("class", new JValue(node.Class));
+					o.Add("class", new JValue(metadata.classValues[node.Class]));
 				}
 				return o;
 			}
