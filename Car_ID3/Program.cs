@@ -20,6 +20,18 @@ namespace Car_ID3
 			var classificator = trainer.Train();
 			Console.WriteLine("Generated tree");
 			OutputTree(metadata, instances, trainer.GetRootNode(classificator), false);
+			var test = instances.Select(i => (i, classificator.Classify(i)));
+			int totalCorrect = 0;
+			for (int c = 0; c < metadata.classValues.Length; c++)
+			{
+				int correct = test.Count(i => i.Item1.Last() == c && i.Item2 == c);
+				double precision = (double)correct / test.Count(i => i.Item2 == c);
+				double recall = (double)correct / test.Count(i => i.Item1.Last() == c);
+				totalCorrect += correct;
+
+				Console.WriteLine($"class {metadata.classValues[c]} precision: {precision} recall: {recall}");
+			}
+			Console.WriteLine($"accuracy: {(double)totalCorrect / test.Count()}");
 			Console.ReadLine();
 		}
 
