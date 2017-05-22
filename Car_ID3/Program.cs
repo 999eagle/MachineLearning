@@ -20,19 +20,42 @@ namespace Car_ID3
 			var classificator = trainer.Train();
 			Console.WriteLine("Generated tree");
 			OutputTree(metadata, instances, trainer.GetRootNode(classificator), true);
+			WriteStatistics(metadata, instances, classificator);
+			Console.ReadLine();
+		}
+
+		static void WriteStatistics<T>((string[] classValues, TrainAttribute[] attributes) metadata, T[][] instances, IClassificator<T> classificator) where T : struct, IEquatable<T>
+		{
 			var test = instances.Select(i => (i, classificator.Classify(i)));
 			int totalCorrect = 0;
+			double weightedMacroPrec = 0;
+			double weightedMacroRec = 0;
+			double macroPrec = 0;
+			double macroRec = 0;
+			var cv = ValueHelper<T>.Convert;
 			for (int c = 0; c < metadata.classValues.Length; c++)
 			{
-				int correct = test.Count(i => i.Item1.Last() == c && i.Item2 == c);
-				double precision = (double)correct / test.Count(i => i.Item2 == c);
-				double recall = (double)correct / test.Count(i => i.Item1.Last() == c);
+				T ct = cv(c);
+				int correct = test.Count(i => i.Item1.Last().Equals(ct) && i.Item2.Equals(ct));
+				int actual = test.Count(i => i.Item1.Last().Equals(ct));
+				int predicted = test.Count(i => i.Item2.Equals(ct));
+				double precision = (double)correct / predicted;
+				double recall = (double)correct / actual;
+				double macroWeight = (double)actual / instances.Length;
+
 				totalCorrect += correct;
+				macroPrec += precision;
+				macroRec += recall;
+				weightedMacroPrec += macroWeight * precision;
+				weightedMacroRec += macroWeight * recall;
 
 				Console.WriteLine($"class {metadata.classValues[c]} precision: {precision} recall: {recall}");
 			}
+			macroPrec /= metadata.classValues.Length;
+			macroRec /= metadata.classValues.Length;
+			Console.WriteLine($"weighted macro precision: {weightedMacroPrec} weighted macro recall: {weightedMacroRec}");
+			Console.WriteLine($"macro precision: {macroPrec} macro recall: {macroRec}");
 			Console.WriteLine($"accuracy: {(double)totalCorrect / test.Count()}");
-			Console.ReadLine();
 		}
 
 		static void OutputTree<T>((string[] classValues, TrainAttribute[] attributes) metadata, T[][] instances, ID3Training<T>.Node rootNode, bool includeInstanceDistribution) where T : struct, IEquatable<T>
