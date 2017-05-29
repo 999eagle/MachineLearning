@@ -36,6 +36,8 @@ namespace Car_ID3
 			double macroRec = 0;
 			double macroF1 = 0;
 			var cv = ValueHelper<T>.Convert;
+			Console.WriteLine("Classificator evaluation\n==============================\nClass specific values\n------------------------------");
+			int longestClass = metadata.classValues.Select(s => s.Length).Max() + 1;
 			for (int c = 0; c < metadata.classValues.Length; c++)
 			{
 				T ct = cv(c);
@@ -55,17 +57,18 @@ namespace Car_ID3
 				weightedMacroRec += macroWeight * recall;
 				weightedMacroF1 += macroWeight * f1;
 
-				Console.WriteLine($"class {metadata.classValues[c]} precision: {precision} recall: {recall} f1 measure: {f1}");
+				Console.WriteLine($"class \"{(metadata.classValues[c] + "\"").PadRight(longestClass)} precision: {precision:0.0000} recall: {recall:0.0000} f1 measure: {f1:0.0000}");
 			}
 			macroPrec /= metadata.classValues.Length;
 			macroRec /= metadata.classValues.Length;
 			macroF1 /= metadata.classValues.Length;
 			double weightedMacroPrecRecF1 = 2 * weightedMacroPrec * weightedMacroRec / (weightedMacroPrec + weightedMacroRec);
 			double macroPrecRecF1 = 2 * macroPrec * macroRec / (macroPrec + macroRec);
-			Console.WriteLine($"weighted macro precision: {weightedMacroPrec} weighted macro recall: {weightedMacroRec} corresponding f1 measure: {weightedMacroPrecRecF1}");
-			Console.WriteLine($"macro precision: {macroPrec} macro recall: {macroRec} corresponding f1 measure: {macroPrecRecF1}");
-			Console.WriteLine($"weighted macro f1 measure: {weightedMacroF1} macro f1 measure: {macroF1}");
-			Console.WriteLine($"accuracy: {(double)totalCorrect / test.Count()}");
+			Console.WriteLine("\n\nClassificator specific values\n------------------------------");
+			Console.WriteLine($"weighted macro precision: {weightedMacroPrec:0.0000} weighted macro recall: {weightedMacroRec:0.0000} corresponding f1 measure: {weightedMacroPrecRecF1:0.0000}");
+			Console.WriteLine($"         macro precision: {macroPrec:0.0000}          macro recall: {macroRec:0.0000} corresponding f1 measure: {macroPrecRecF1:0.0000}\n");
+			Console.WriteLine($"weighted macro f1 measure: {weightedMacroF1:0.0000}\nmacro f1 measure: {macroF1:0.0000}");
+			Console.WriteLine($"accuracy: {(double)totalCorrect / test.Count():0.0000}");
 		}
 
 		static void OutputTree<T>((string[] classValues, TrainAttribute[] attributes) metadata, T[][] instances, ID3Training<T>.Node rootNode, bool includeInstanceDistribution) where T : struct, IEquatable<T>
