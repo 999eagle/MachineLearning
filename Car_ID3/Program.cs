@@ -30,8 +30,10 @@ namespace Car_ID3
 			int totalCorrect = 0;
 			double weightedMacroPrec = 0;
 			double weightedMacroRec = 0;
+			double weightedMacroF1 = 0;
 			double macroPrec = 0;
 			double macroRec = 0;
+			double macroF1 = 0;
 			var cv = ValueHelper<T>.Convert;
 			for (int c = 0; c < metadata.classValues.Length; c++)
 			{
@@ -41,20 +43,27 @@ namespace Car_ID3
 				int predicted = test.Count(i => i.Item2.Equals(ct));
 				double precision = (double)correct / predicted;
 				double recall = (double)correct / actual;
+				double f1 = 2 * precision * recall / (precision + recall);
 				double macroWeight = (double)actual / instances.Length;
 
 				totalCorrect += correct;
 				macroPrec += precision;
 				macroRec += recall;
+				macroF1 += f1;
 				weightedMacroPrec += macroWeight * precision;
 				weightedMacroRec += macroWeight * recall;
+				weightedMacroF1 += macroWeight * f1;
 
-				Console.WriteLine($"class {metadata.classValues[c]} precision: {precision} recall: {recall}");
+				Console.WriteLine($"class {metadata.classValues[c]} precision: {precision} recall: {recall} f1 measure: {f1}");
 			}
 			macroPrec /= metadata.classValues.Length;
 			macroRec /= metadata.classValues.Length;
-			Console.WriteLine($"weighted macro precision: {weightedMacroPrec} weighted macro recall: {weightedMacroRec}");
-			Console.WriteLine($"macro precision: {macroPrec} macro recall: {macroRec}");
+			macroF1 /= metadata.classValues.Length;
+			double weightedMacroPrecRecF1 = 2 * weightedMacroPrec * weightedMacroRec / (weightedMacroPrec + weightedMacroRec);
+			double macroPrecRecF1 = 2 * macroPrec * macroRec / (macroPrec + macroRec);
+			Console.WriteLine($"weighted macro precision: {weightedMacroPrec} weighted macro recall: {weightedMacroRec} corresponding f1 measure: {weightedMacroPrecRecF1}");
+			Console.WriteLine($"macro precision: {macroPrec} macro recall: {macroRec} corresponding f1 measure: {macroPrecRecF1}");
+			Console.WriteLine($"weighted macro f1 measure: {weightedMacroF1} macro f1 measure: {macroF1}");
 			Console.WriteLine($"accuracy: {(double)totalCorrect / test.Count()}");
 		}
 
