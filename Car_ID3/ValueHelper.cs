@@ -21,7 +21,7 @@ namespace Car_ID3
 		{
 			var parameter = Expression.Parameter(typeof(Tin));
 			var method = Expression.Lambda<Func<Tin, Tout>>(
-				Expression.ConvertChecked(parameter, typeof(Tout)),
+				Expression.Convert(parameter, typeof(Tout)),
 				parameter);
 			return method.Compile();
 		}

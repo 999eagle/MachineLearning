@@ -49,6 +49,8 @@ namespace Car_ID3
 				RootNode = rootNode;
 			}
 
+			private Func<int, TValueIndex> CV = ValueHelper<TValueIndex>.Convert;
+
 			public TValueIndex Classify(TValueIndex[] instance)
 			{
 				var currentNode = RootNode;
@@ -56,6 +58,7 @@ namespace Car_ID3
 				{
 					var value = instance[currentNode.TrainAttribute.Value];
 					currentNode = currentNode.Children.FirstOrDefault(c => c.attributeValue.Equals(value)).node;
+					if (currentNode == null) { return CV(-1); }
 				}
 				return currentNode.Class.Value;
 			}
@@ -104,7 +107,7 @@ namespace Car_ID3
 							};
 							child.CalcEntropy(classValues.Length, instances);
 							return (c, child);
-						});
+						}).Where(c => c.Item2.InstanceIds.Length > 0);
 						// calculate gain
 						var gain = children.Aggregate(node.Entropy, (g, c) => g - c.Item2.Entropy * c.Item2.InstanceIds.Length / node.InstanceIds.Length);
 						if (gain > maxGain)

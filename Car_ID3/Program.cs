@@ -16,11 +16,12 @@ namespace Car_ID3
 			var metadata = ReadMetaData("car_data\\car.c45-names");
 			var instances = ReadInstances(metadata, "car_data\\car.data");
 			Console.WriteLine("Read input");
-			var trainer = new ID3Training<byte>(metadata.attributes, metadata.classValues, instances);
+			int split = instances.Length * 7 / 10;
+			var trainer = new ID3Training<byte>(metadata.attributes, metadata.classValues, instances.Take(split).ToArray());
 			var classificator = trainer.Train();
 			Console.WriteLine("Generated tree");
 			OutputTree(metadata, instances, trainer.GetRootNode(classificator), true);
-			WriteStatistics(metadata, instances, classificator);
+			WriteStatistics(metadata, instances.Skip(split).ToArray(), classificator);
 			Console.ReadLine();
 		}
 
@@ -41,9 +42,9 @@ namespace Car_ID3
 				int correct = test.Count(i => i.Item1.Last().Equals(ct) && i.Item2.Equals(ct));
 				int actual = test.Count(i => i.Item1.Last().Equals(ct));
 				int predicted = test.Count(i => i.Item2.Equals(ct));
-				double precision = (double)correct / predicted;
-				double recall = (double)correct / actual;
-				double f1 = 2 * precision * recall / (precision + recall);
+				double precision = correct == 0 ? 0 : (double)correct / predicted;
+				double recall = correct == 0 ? 0 : (double)correct / actual;
+				double f1 = correct == 0 ? 0 : 2 * precision * recall / (precision + recall);
 				double macroWeight = (double)actual / instances.Length;
 
 				totalCorrect += correct;
