@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Car_ID3
+namespace MachineLearning
 {
-	class ID3Training<TValueIndex> where TValueIndex : struct, IEquatable<TValueIndex>
+	public class ID3Training<TValueIndex> where TValueIndex : struct, IEquatable<TValueIndex>
 	{
 		TrainAttribute[] attributes;
 		string[] classValues;

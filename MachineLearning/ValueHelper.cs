@@ -5,15 +5,15 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Car_ID3
+namespace MachineLearning
 {
-	class ValueHelper<T> where T : struct
+	public class ValueHelper<T> where T : struct
 	{
 		public static readonly Func<int, T> Convert = ValueHelper.GenerateConverter<int, T>();
 		public static readonly Func<T, int> ConvertBack = ValueHelper.GenerateConverter<T, int>();
 	}
 
-	class ValueHelper
+	public class ValueHelper
 	{
 		public static T Convert<T>(int value) where T : struct => ValueHelper<T>.Convert(value);
 

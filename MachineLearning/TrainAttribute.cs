@@ -5,9 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Car_ID3
+namespace MachineLearning
 {
-	class TrainAttribute
+	public class TrainAttribute
 	{
 		public string Name { get; private set; }
 		public string[] PossibleValues { get; private set; }
